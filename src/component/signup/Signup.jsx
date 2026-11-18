@@ -1,51 +1,78 @@
-import React,{useState} from 'react'
-import './signup.css'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+
+
+i
+import React, { useState, useContext } from 'react';
+import './signup.css';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { productContext } from '../contextAPI/Context';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Signup = () => {
+    const navigate = useNavigate();
+    const { setToken } = useContext(productContext);
 
-  const navigate = useNavigate()
+    const [name, setName] = useState('');
+    const [email, setMail] = useState('');
+    const [password, setPassword] = useState('');
 
-  const [name, setName] = useState('')
-  const [email, setMail] = useState('')
-  const [password, setPassword] = useState('')
-
-  const url = "http://localhost:5000/signup"
-
-  const changeNameHandler = (e) => {
-      setName(e.target.value)
-  }
-  const changeMailHandler = (e) => {
-      setMail(e.target.value)
-  }
-  const changePasswordHandler = (e) => {
-      setPassword(e.target.value)
-  }
-
-  const submitHandler = () => {
-    // console.log(name, mail, password)
-    axios.post(url, { name, email, password })
-    .then(res => {
-        if (res.status === 200 || res.status === 201) {
-            localStorage.setItem('token', JSON.stringify(res.data.token));
-            console.log(res.data); // Log the response data if the request was successful.
-            navigate('/')
-        } else {
-            console.log('Request failed with status:', res.status);
+    const submitHandler = async () => {
+        if (!name || !email || !password) {
+            alert('Please fill all fields');
+            return;
         }
-    })
-}
 
+        try {
+            const res = await axios.post(`${API_URL}/signup`, {
+                name,
+                email,
+                password
+            });
 
-  return (
-    <div className='signup'>
-      <input type="text" placeholder='username' onChange={(e) => { changeNameHandler(e) }}/>
-      <input type="text" placeholder='email' onChange={(e) => { changeMailHandler(e) }}/>
-      <input type="password" placeholder='password'  onChange={(e) => { changePasswordHandler(e) }} />
-      <button onClick={() => { submitHandler() }}>SignUp</button>
-    </div>
-  )
-}
+            if (res.status === 200 || res.status === 201) {
+                alert('Signup successful! Please login.');
 
-export default Signup
+                localStorage.removeItem('token');
+                setToken(null);
+
+                navigate('/login', { replace: true });
+            }
+        } catch (error) {
+            console.log('Signup error:', error);
+            alert(
+                error.response?.data?.message ||
+                'Signup failed. Please try again.'
+            );
+        }
+    };
+
+    return (
+        <div className="signup">
+            <input
+                type="text"
+                placeholder="username"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+            />
+
+            <input
+                type="email"
+                placeholder="email"
+                value={email}
+                onChange={(e) => setMail(e.target.value)}
+            />
+
+            <input
+                type="password"
+                placeholder="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <button onClick={submitHandler}>SignUp</button>
+        </div>
+    );
+};
+
+export default Signup;
