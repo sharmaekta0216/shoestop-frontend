@@ -1,76 +1,90 @@
 
 
-i
+
+
 import React, { useState, useContext } from 'react';
 import './signup.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { productContext } from '../contextAPI/Context';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (
+    import.meta.env.VITE_API_URL ||
+    'https://shoestop-backend-1.onrender.com'
+).replace(/\/+$/, '');
 
 const Signup = () => {
     const navigate = useNavigate();
     const { setToken } = useContext(productContext);
 
     const [name, setName] = useState('');
-    const [email, setMail] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const submitHandler = async () => {
-        if (!name || !email || !password) {
+    const submitHandler = async (e) => {
+        e.preventDefault();
+
+        if (!name.trim() || !email.trim() || !password) {
             alert('Please fill all fields');
             return;
         }
 
         try {
+            setLoading(true);
+
             const res = await axios.post(`${API_URL}/signup`, {
-                name,
-                email,
+                name: name.trim(),
+                email: email.trim(),
                 password
             });
 
             if (res.status === 200 || res.status === 201) {
-                alert('Signup successful! Please login.');
-
                 localStorage.removeItem('token');
                 setToken(null);
 
+                alert('Signup successful! Please login.');
                 navigate('/login', { replace: true });
             }
         } catch (error) {
-            console.log('Signup error:', error);
+            console.error('Signup error:', error);
             alert(
                 error.response?.data?.message ||
                 'Signup failed. Please try again.'
             );
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="signup">
-            <input
-                type="text"
-                placeholder="username"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-            />
+            <form onSubmit={submitHandler}>
+                <input
+                    type="text"
+                    placeholder="Username"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
 
-            <input
-                type="email"
-                placeholder="email"
-                value={email}
-                onChange={(e) => setMail(e.target.value)}
-            />
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
 
-            <input
-                type="password"
-                placeholder="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
 
-            <button onClick={submitHandler}>SignUp</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Please wait...' : 'SignUp'}
+                </button>
+            </form>
         </div>
     );
 };
